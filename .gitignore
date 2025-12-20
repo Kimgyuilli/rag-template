@@ -179,4 +179,18 @@ logs/
 application-local.yml
 !application.yml
 
+### RAG Project Specific ###
+# Uploaded documents (if stored locally)
+data/
+uploads/
+documents/
+
+# Test files
+test-documents/
+*.test.txt
+*.test.md
+
+# Plan files (optional, uncomment if you don't want to commit plans)
+# .claude/plans/
+
 # End of https://www.toptal.com/developers/gitignore/api/intellij,java,git,redis

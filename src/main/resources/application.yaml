@@ -1,3 +1,65 @@
 spring:
   application:
     name: rag
+
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ragdb
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  # JPA / Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+    open-in-view: false
+
+  # File Upload Configuration
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+      enabled: true
+
+# RAG Application Configuration
+rag:
+  # OpenAI API Settings
+  openai:
+    api-key: ${OPENAI_API_KEY}
+    embedding-model: text-embedding-ada-002
+    chat-model: gpt-3.5-turbo
+    timeout: 60s
+    max-retries: 3
+
+  # Text Chunking Settings
+  chunking:
+    chunk-size: 1000        # tokens
+    chunk-overlap: 200      # tokens
+    min-chunk-size: 100     # minimum tokens per chunk
+
+  # Vector Retrieval Settings
+  retrieval:
+    top-k: 3                # number of chunks to retrieve
+    similarity-threshold: 0.7  # minimum cosine similarity (0-1)
+
+  # Document Processing Settings
+  documents:
+    allowed-extensions: txt,md
+    storage-path: ${DOCUMENT_STORAGE_PATH:./data/documents}
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.example.rag: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
