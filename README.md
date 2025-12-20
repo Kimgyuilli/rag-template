@@ -74,7 +74,8 @@ export DB_PASSWORD="postgres"
 java -jar build/libs/rag-0.0.1-SNAPSHOT.jar
 ```
 
-애플리케이션이 `http://localhost:8080`에서 실행됩니다.
+애플리케이션이 기본적으로 `http://localhost:8080`에서 실행됩니다.
+개발 모드(`--spring.profiles.active=dev`)에서는 `http://localhost:8081`에서 실행됩니다.
 
 ---
 
@@ -105,27 +106,43 @@ curl -X POST http://localhost:8080/api/v1/documents/upload \
 업로드한 문서 내용을 기반으로 질문:
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/chat \
+curl -X POST http://localhost:8081/api/v1/chat \
   -H "Content-Type: application/json" \
   -d '{
-    "message": "비밀번호를 어떻게 재설정하나요?"
+    "question": "RAG 시스템에서 지원하는 파일 형식은 무엇인가요?"
   }'
 ```
 
 **응답 예시:**
 ```json
 {
-  "response": "비밀번호를 재설정하려면 로그인 페이지에서 '비밀번호 찾기' 링크를 클릭하세요...",
+  "question": "RAG 시스템에서 지원하는 파일 형식은 무엇인가요?",
+  "answer": "RAG 시스템은 .txt와 .md 파일 형식을 지원합니다.",
   "sources": [
     {
       "documentId": "abc123",
-      "filename": "user-manual.txt",
-      "chunkIndex": 5,
-      "similarity": 0.89,
-      "content": "비밀번호 재설정 방법: 로그인 페이지에서..."
+      "filename": "test-document.txt",
+      "chunkIndex": 1,
+      "content": "지원 파일 형식: .txt, .md\n최대 파일 크기: 10MB",
+      "similarity": 0.92,
+      "sourceType": "txt"
     }
-  ]
+  ],
+  "processingTimeMs": 1234,
+  "model": "gpt-3.5-turbo",
+  "timestamp": "2025-01-20T10:30:15"
 }
+```
+
+**커스텀 파라미터 사용:**
+```bash
+curl -X POST http://localhost:8081/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "업로드 과정을 설명해주세요",
+    "topK": 5,
+    "similarityThreshold": 0.6
+  }'
 ```
 
 ### 3. 헬스체크
@@ -158,11 +175,15 @@ curl http://localhost:8080/api/v1/health
 
 | 컴포넌트 | 역할 |
 |---------|------|
+| `DocumentController` | 문서 업로드/삭제 REST API |
+| `ChatController` | 채팅 질의응답 REST API |
 | `DocumentService` | 문서 처리 파이프라인 오케스트레이션 |
-| `EmbeddingService` | OpenAI API로 임베딩 생성 |
-| `TextChunker` | 텍스트를 토큰 단위로 청킹 |
-| `VectorSearchService` | pgvector로 유사도 검색 |
-| `ChatService` | RAG 파이프라인 및 LLM 호출 |
+| `ChatService` | RAG 파이프라인 오케스트레이션 및 LLM 호출 |
+| `EmbeddingService` | OpenAI API로 임베딩 생성 (단일/배치) |
+| `TextChunker` | 텍스트를 토큰 단위로 재귀적 청킹 |
+| `VectorSearchService` | pgvector로 코사인 유사도 검색 |
+| `PromptBuilder` | RAG 프롬프트 템플릿 생성 |
+| `DocumentChunkRepository` | JPA Repository with pgvector 쿼리 |
 
 ---
 
@@ -242,9 +263,9 @@ rag:
 
 2. **질문 테스트**
    ```bash
-   curl -X POST http://localhost:8080/api/v1/chat \
+   curl -X POST http://localhost:8081/api/v1/chat \
      -H "Content-Type: application/json" \
-     -d '{"message": "비밀번호를 어떻게 바꾸나요?"}'
+     -d '{"question": "비밀번호를 어떻게 바꾸나요?"}'
    ```
 
 3. **PostgreSQL 벡터 확인**

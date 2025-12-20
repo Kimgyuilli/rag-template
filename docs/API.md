@@ -15,7 +15,8 @@
 ### Base URL
 
 ```
-http://localhost:8080/api/v1
+http://localhost:8081/api/v1  # Development (dev profile)
+http://localhost:8080/api/v1  # Production
 ```
 
 ### Content Type
@@ -236,9 +237,10 @@ Content-Type: application/json
 
 ```json
 {
-  "message": "비밀번호를 어떻게 재설정하나요?",
-  "includeSourceContent": true,
-  "maxSources": 3
+  "question": "RAG 시스템에서 지원하는 파일 형식은 무엇인가요?",
+  "documentId": null,
+  "topK": 3,
+  "similarityThreshold": 0.7
 }
 ```
 
@@ -246,9 +248,10 @@ Content-Type: application/json
 
 | 필드 | 타입 | 필수 | 기본값 | 설명 |
 |-----|------|------|--------|------|
-| message | String | Yes | - | 사용자 질문 (최대 1000자) |
-| includeSourceContent | Boolean | No | true | 소스 청크 내용 포함 여부 |
-| maxSources | Integer | No | 3 | 반환할 최대 소스 수 (1-5) |
+| question | String | Yes | - | 사용자 질문 |
+| documentId | String | No | null | 특정 문서 내에서만 검색 (null = 전체 검색) |
+| topK | Integer | No | 3 | 검색할 최대 청크 수 |
+| similarityThreshold | Double | No | 0.7 | 유사도 임계값 (0-1) |
 
 #### Response
 
@@ -256,55 +259,29 @@ Content-Type: application/json
 
 ```json
 {
-  "response": "비밀번호를 재설정하려면 다음 단계를 따르세요:\n\n1. 로그인 페이지에서 '비밀번호 찾기'를 클릭합니다.\n2. 등록된 이메일 주소를 입력합니다.\n3. 받은 이메일의 재설정 링크를 클릭합니다.\n4. 새 비밀번호를 입력하고 확인합니다.",
+  "question": "RAG 시스템에서 지원하는 파일 형식은 무엇인가요?",
+  "answer": "RAG 시스템은 .txt와 .md 파일 형식을 지원합니다. 최대 파일 크기는 10MB입니다.",
   "sources": [
     {
       "documentId": "550e8400-e29b-41d4-a716-446655440000",
-      "filename": "user-manual.txt",
-      "chunkIndex": 5,
-      "similarity": 0.89,
-      "content": "비밀번호 재설정 방법:\n1. 로그인 페이지 접속\n2. '비밀번호 찾기' 클릭\n3. 이메일 주소 입력\n4. 재설정 링크 수신..."
+      "filename": "rag-guide.txt",
+      "chunkIndex": 1,
+      "content": "지원 파일 형식: .txt, .md\n최대 파일 크기: 10MB",
+      "similarity": 0.92,
+      "sourceType": "txt"
     },
     {
       "documentId": "550e8400-e29b-41d4-a716-446655440000",
-      "filename": "faq.md",
-      "chunkIndex": 12,
-      "similarity": 0.82,
-      "content": "Q: 비밀번호를 잊어버렸어요.\nA: 비밀번호 찾기 기능을 이용하세요..."
-    },
-    {
-      "documentId": "abc-123-def-456",
-      "filename": "security-guide.txt",
-      "chunkIndex": 3,
-      "similarity": 0.75,
-      "content": "보안을 위해 비밀번호는 최소 8자 이상이어야 하며..."
+      "filename": "rag-guide.txt",
+      "chunkIndex": 2,
+      "content": "API 엔드포인트: POST /api/v1/documents/upload\n파일을 선택하여 업로드하면 자동으로 처리됩니다.",
+      "similarity": 0.85,
+      "sourceType": "txt"
     }
   ],
-  "metadata": {
-    "searchDurationMs": 150,
-    "llmDurationMs": 1850,
-    "totalDurationMs": 2100,
-    "tokensUsed": 450
-  },
-  "timestamp": "2024-01-20T10:30:15Z"
-}
-```
-
-**includeSourceContent=false인 경우:**
-
-```json
-{
-  "response": "비밀번호를 재설정하려면...",
-  "sources": [
-    {
-      "documentId": "550e8400-e29b-41d4-a716-446655440000",
-      "filename": "user-manual.txt",
-      "chunkIndex": 5,
-      "similarity": 0.89
-    }
-  ],
-  "metadata": { ... },
-  "timestamp": "2024-01-20T10:30:15Z"
+  "processingTimeMs": 1234,
+  "model": "gpt-3.5-turbo",
+  "timestamp": "2025-01-20T10:30:15Z"
 }
 ```
 
@@ -353,12 +330,20 @@ Content-Type: application/json
 #### cURL Example
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/chat \
+# 기본 질문
+curl -X POST http://localhost:8081/api/v1/chat \
   -H "Content-Type: application/json" \
   -d '{
-    "message": "비밀번호를 어떻게 재설정하나요?",
-    "includeSourceContent": true,
-    "maxSources": 3
+    "question": "RAG 시스템에서 지원하는 파일 형식은 무엇인가요?"
+  }'
+
+# 파라미터 지정
+curl -X POST http://localhost:8081/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "업로드 방법을 알려주세요",
+    "topK": 5,
+    "similarityThreshold": 0.6
   }'
 ```
 
@@ -445,7 +430,7 @@ curl -X GET "http://localhost:8080/api/v1/documents?page=0&size=10"
 
 ---
 
-### 5. 문서 삭제 (향후 구현)
+### 5. 문서 삭제
 
 특정 문서와 관련된 모든 청크를 삭제합니다.
 
@@ -465,13 +450,8 @@ DELETE /api/v1/documents/{documentId}
 
 **200 OK**
 
-```json
-{
-  "message": "문서가 성공적으로 삭제되었습니다.",
-  "documentId": "550e8400-e29b-41d4-a716-446655440000",
-  "deletedChunks": 12,
-  "timestamp": "2024-01-20T10:30:00Z"
-}
+```
+Document deleted successfully
 ```
 
 **404 Not Found**
@@ -502,15 +482,14 @@ curl -X DELETE "http://localhost:8080/api/v1/documents/550e8400-e29b-41d4-a716-4
 
 ```java
 public class ChatRequest {
-    @NotBlank(message = "질문은 필수입니다.")
-    @Size(max = 1000, message = "질문은 1000자를 초과할 수 없습니다.")
-    private String message;
+    @NotBlank(message = "Question cannot be blank")
+    private String question;
 
-    private Boolean includeSourceContent = true;
+    private String documentId;  // Optional: search within specific document
 
-    @Min(1)
-    @Max(5)
-    private Integer maxSources = 3;
+    private Integer topK;  // Optional: number of chunks to retrieve
+
+    private Double similarityThreshold;  // Optional: similarity threshold (0-1)
 }
 ```
 
@@ -518,9 +497,11 @@ public class ChatRequest {
 
 ```java
 public class ChatResponse {
-    private String response;
+    private String question;
+    private String answer;
     private List<SourceReference> sources;
-    private ResponseMetadata metadata;
+    private Long processingTimeMs;
+    private String model;
     private LocalDateTime timestamp;
 }
 ```
@@ -532,8 +513,9 @@ public class SourceReference {
     private String documentId;
     private String filename;
     private Integer chunkIndex;
+    private String content;
     private Double similarity;
-    private String content;  // includeSourceContent=true일 때만
+    private String sourceType;
 }
 ```
 
@@ -558,33 +540,30 @@ public class DocumentUploadResponse {
 ### 시나리오 1: 기본 사용 흐름
 
 ```bash
-# 1. 헬스체크
-curl http://localhost:8080/api/v1/health
-
-# 2. 문서 업로드
-curl -X POST http://localhost:8080/api/v1/documents/upload \
+# 1. 문서 업로드
+curl -X POST http://localhost:8081/api/v1/documents/upload \
   -F "file=@manual.txt"
 
 # 응답: {"documentId": "abc-123", "chunksCreated": 10, ...}
 
-# 3. 질문하기
-curl -X POST http://localhost:8080/api/v1/chat \
+# 2. 질문하기
+curl -X POST http://localhost:8081/api/v1/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "사용법을 알려주세요"}'
+  -d '{"question": "사용법을 알려주세요"}'
 
-# 응답: {"response": "사용법은 다음과 같습니다...", "sources": [...]}
+# 응답: {"answer": "사용법은 다음과 같습니다...", "sources": [...]}
 ```
 
-### 시나리오 2: 소스 내용 제외
+### 시나리오 2: 커스텀 파라미터 사용
 
 ```bash
-# 응답 크기를 줄이고 싶을 때
-curl -X POST http://localhost:8080/api/v1/chat \
+# 더 많은 결과를 원할 때
+curl -X POST http://localhost:8081/api/v1/chat \
   -H "Content-Type: application/json" \
   -d '{
-    "message": "비밀번호 재설정 방법은?",
-    "includeSourceContent": false,
-    "maxSources": 1
+    "question": "업로드 과정을 설명해주세요",
+    "topK": 5,
+    "similarityThreshold": 0.6
   }'
 ```
 
@@ -592,21 +571,21 @@ curl -X POST http://localhost:8080/api/v1/chat \
 
 ```bash
 # 1. 첫 번째 문서 업로드
-curl -X POST http://localhost:8080/api/v1/documents/upload \
+curl -X POST http://localhost:8081/api/v1/documents/upload \
   -F "file=@user-guide.txt"
 
 # 2. 두 번째 문서 업로드
-curl -X POST http://localhost:8080/api/v1/documents/upload \
+curl -X POST http://localhost:8081/api/v1/documents/upload \
   -F "file=@faq.md"
 
 # 3. 세 번째 문서 업로드
-curl -X POST http://localhost:8080/api/v1/documents/upload \
+curl -X POST http://localhost:8081/api/v1/documents/upload \
   -F "file=@troubleshooting.txt"
 
 # 4. 질문 - 모든 문서에서 검색됨
-curl -X POST http://localhost:8080/api/v1/chat \
+curl -X POST http://localhost:8081/api/v1/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "로그인이 안돼요"}'
+  -d '{"question": "로그인이 안돼요"}'
 
 # 응답에 여러 문서의 관련 정보가 포함됨
 ```
