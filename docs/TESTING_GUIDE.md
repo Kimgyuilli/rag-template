@@ -64,29 +64,19 @@ docker ps | grep rag-postgres
 ### Step 2: pgvector Extension 확인
 
 ```bash
-# PostgreSQL 접속
-docker exec -it rag-postgres psql -U postgres -d ragdb
+# PostgreSQL 접속하여 extension 확인
+docker exec -it rag-postgres psql -U postgres -d ragdb -c "\dx"
 
-# Extension 확인
-\dx
-
-# 예상 출력:
-#   Name   | Version |   Schema   |         Description
-# ---------+---------+------------+------------------------------
-#  plpgsql | 1.0     | pg_catalog | PL/pgSQL procedural language
-#  vector  | 0.8.1   | public     | vector data type and ivfflat...
-
-# 종료
-\q
+# pgvector extension이 설치되어 있는지 확인
 ```
 
 ### Step 3: 테이블 확인
 
 ```bash
-docker exec -it rag-postgres psql -U postgres -d ragdb \
-  -c "\d document_chunks"
+# document_chunks 테이블 스키마 확인
+docker exec -it rag-postgres psql -U postgres -d ragdb -c "\d document_chunks"
 
-# 예상 출력: id, document_id, filename, chunk_index, content, embedding, source_type, created_at
+# 필요한 컬럼들이 존재하는지 확인
 ```
 
 ### Step 4: 애플리케이션 빌드
@@ -187,16 +177,11 @@ curl -X POST http://localhost:8081/api/v1/documents/upload \
 
 ### Test Case 3: 데이터베이스 확인
 
-```bash
-# 업로드된 청크 확인
-docker exec -it rag-postgres psql -U postgres -d ragdb \
-  -c "SELECT id, filename, chunk_index, left(content, 50) FROM document_chunks ORDER BY created_at DESC LIMIT 3;"
+PostgreSQL 컨테이너에 접속하여 업로드된 청크가 저장되었는지 확인:
 
-# 예상 출력:
-#  id |      filename      | chunk_index |                   left
-# ----+--------------------+-------------+------------------------------------------
-#   1 | test-rag-guide.txt |           0 | RAG 시스템 사용 가이드...
-```
+- document_chunks 테이블에 데이터가 삽입되었는지 확인
+- filename, chunk_index, content 등의 필드 확인
+- pgAdmin이나 DBeaver 같은 GUI 도구 사용 권장
 
 ---
 
@@ -305,16 +290,10 @@ curl -X DELETE "http://localhost:8081/api/v1/documents/${DOCUMENT_ID}"
 
 ### Test Case 9: 삭제 확인
 
-```bash
-# 데이터베이스에서 확인
-docker exec -it rag-postgres psql -U postgres -d ragdb \
-  -c "SELECT COUNT(*) FROM document_chunks WHERE document_id = '${DOCUMENT_ID}';"
+데이터베이스에서 해당 문서의 청크가 모두 삭제되었는지 확인:
 
-# 예상 출력:
-#  count
-# -------
-#      0
-```
+- document_chunks 테이블에서 해당 document_id의 레코드가 0개인지 확인
+- pgAdmin 등의 GUI 도구로 확인 가능
 
 ---
 
@@ -381,13 +360,12 @@ export OPENAI_API_KEY="sk-..."
 
 ### 문제 3: "Embedding dimension mismatch"
 
-```bash
-# 벡터 차원 확인
-docker exec -it rag-postgres psql -U postgres -d ragdb \
-  -c "SELECT vector_dims(embedding) FROM document_chunks LIMIT 1;"
+**원인**: 벡터 차원이 맞지 않음
 
-# 예상: 1536 (text-embedding-ada-002 dimension)
-```
+**해결**:
+- text-embedding-ada-002의 기본 차원은 1536
+- 데이터베이스 스키마의 vector(1536) 설정 확인
+- 애플리케이션 로그에서 임베딩 생성 과정 확인
 
 ### 문제 4: "No similar documents found"
 

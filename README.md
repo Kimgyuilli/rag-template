@@ -169,7 +169,7 @@ curl http://localhost:8080/api/v1/health
   질문 → 임베딩 생성 → 벡터 검색 → 컨텍스트 조립 → LLM 호출 → 답변
 ```
 
-상세한 아키텍처는 [ARCHITECTURE.md](./ARCHITECTURE.md)를 참조하세요.
+상세한 아키텍처는 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)를 참조하세요.
 
 ### 주요 컴포넌트
 
@@ -206,7 +206,8 @@ rag/
 │   └── db/migration/        # DB 스키마 (Flyway, 선택)
 ├── docs/                    # 문서
 │   ├── ARCHITECTURE.md      # 아키텍처 설계
-│   └── API.md               # API 명세
+│   ├── API.md               # API 명세
+│   └── TESTING_GUIDE.md     # 테스트 가이드
 ├── docker-compose.yml       # PostgreSQL + pgvector
 ├── build.gradle             # Gradle 빌드 설정
 └── README.md                # 이 파일
@@ -216,26 +217,14 @@ rag/
 
 ## 🔧 설정
 
-### application.yaml 주요 설정
+주요 설정은 `src/main/resources/application.yaml`에서 관리합니다:
 
-```yaml
-rag:
-  openai:
-    api-key: ${OPENAI_API_KEY}
-    embedding-model: text-embedding-ada-002
-    chat-model: gpt-3.5-turbo
+- **OpenAI 설정**: API 키, 모델 선택 (embedding, chat)
+- **청킹 설정**: chunk-size (1000 토큰), chunk-overlap (200 토큰)
+- **검색 설정**: top-k (3), similarity-threshold (0.7)
+- **문서 설정**: allowed-extensions (txt, md)
 
-  chunking:
-    chunk-size: 1000          # 토큰 단위
-    chunk-overlap: 200        # 오버랩 토큰
-
-  retrieval:
-    top-k: 3                  # 검색할 청크 수
-    similarity-threshold: 0.7 # 최소 유사도
-
-  documents:
-    allowed-extensions: txt,md
-```
+상세 설정은 프로젝트의 `application.yaml` 파일을 참조하세요.
 
 ---
 
@@ -268,11 +257,9 @@ rag:
      -d '{"question": "비밀번호를 어떻게 바꾸나요?"}'
    ```
 
-3. **PostgreSQL 벡터 확인**
-   ```bash
-   docker exec -it rag-postgres psql -U postgres -d ragdb \
-     -c "SELECT id, filename, chunk_index, left(content, 50) FROM document_chunks LIMIT 5;"
-   ```
+3. **데이터베이스 확인**
+   - Docker를 통해 PostgreSQL에 접속하여 저장된 청크 확인 가능
+   - pgAdmin 등의 GUI 도구 사용 권장
 
 ---
 
@@ -379,16 +366,9 @@ docker-compose restart postgres
 
 ### pgvector extension 오류
 
-```bash
-# 컨테이너 접속
-docker exec -it rag-postgres psql -U postgres -d ragdb
-
-# extension 확인
-\dx
-
-# extension 생성 (필요시)
-CREATE EXTENSION IF NOT EXISTS vector;
-```
+- 컨테이너에 접속하여 extension 확인
+- 필요시 pgvector extension 생성
+- `docker logs rag-postgres`로 오류 확인
 
 ### OpenAI API 오류
 
@@ -398,11 +378,9 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 ### 임베딩 저장 실패
 
-```bash
-# 벡터 차원 확인 (1536이어야 함)
-docker exec -it rag-postgres psql -U postgres -d ragdb \
-  -c "SELECT vector_dims(embedding) FROM document_chunks LIMIT 1;"
-```
+- 벡터 차원이 1536인지 확인 (text-embedding-ada-002 기본 차원)
+- 데이터베이스 스키마가 올바르게 생성되었는지 확인
+- 애플리케이션 로그에서 상세 오류 메시지 확인
 
 ---
 
