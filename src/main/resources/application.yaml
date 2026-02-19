@@ -4,8 +4,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/ragdb
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    username: postgres
+    password: postgres
 
   jpa:
     hibernate:
