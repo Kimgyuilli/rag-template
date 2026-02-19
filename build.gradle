@@ -8,6 +8,10 @@ group = 'com.example'
 version = '0.0.1-SNAPSHOT'
 description = 'Demo project for Spring Boot'
 
+ext {
+	springAiVersion = '1.1.2'
+}
+
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(21)
@@ -25,6 +29,20 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
+	// Spring AI
+	implementation platform("org.springframework.ai:spring-ai-bom:${springAiVersion}")
+	implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+	implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
+	implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
+
+	// PostgreSQL
+	implementation 'org.postgresql:postgresql'
+
+	// .env 파일 로딩
+	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+
+	// 테스트
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 tasks.named('test') {
