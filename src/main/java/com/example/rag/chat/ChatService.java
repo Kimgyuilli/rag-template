@@ -6,6 +6,8 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 
+import reactor.core.publisher.Flux;
+
 @Service
 public class ChatService {
 
@@ -24,6 +26,16 @@ public class ChatService {
 						.searchRequest(SearchRequest.builder().topK(5).build())
 						.build())
 				.call()
+				.content();
+	}
+
+	public Flux<String> askStream(String question) {
+		return chatClient.prompt()
+				.user(question)
+				.advisors(QuestionAnswerAdvisor.builder(vectorStore)
+						.searchRequest(SearchRequest.builder().topK(5).build())
+						.build())
+				.stream()
 				.content();
 	}
 }
