@@ -47,21 +47,31 @@
             input.value = '';
             input.style.height = 'auto';
             addMsg(q, 'user');
-            const loader = addMsg('답변을 생성하고 있습니다...', 'bot loading');
+            const botMsg = addMsg('', 'bot');
             sendBtn.disabled = true;
 
             try {
-                const res = await fetch('/api/chat', {
+                const res = await fetch('/api/chat/stream', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ question: q })
                 });
-                const data = await res.json();
-                loader.textContent = data.answer;
-                loader.classList.remove('loading');
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const text = decoder.decode(value, { stream: true });
+                    const lines = text.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data:')) {
+                            botMsg.textContent += line.slice(5);
+                            chatArea.scrollTop = chatArea.scrollHeight;
+                        }
+                    }
+                }
             } catch (e) {
-                loader.textContent = '오류가 발생했습니다. 다시 시도해 주세요.';
-                loader.classList.remove('loading');
+                botMsg.textContent = '오류가 발생했습니다. 다시 시도해 주세요.';
             } finally {
                 sendBtn.disabled = false;
                 input.focus();
