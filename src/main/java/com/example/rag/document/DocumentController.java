@@ -1,8 +1,5 @@
 package com.example.rag.document;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,6 +7,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+
+/**
+ * 문서 등록 API 컨트롤러.
+ * {@code POST /api/documents}로 문서를 청크 분할 후 벡터 저장소에 등록한다.
+ */
 @RestController
 @RequestMapping("/api/documents")
 public class DocumentController {
@@ -29,6 +33,7 @@ public class DocumentController {
 	record IngestResponse(String message) {
 	}
 
+	/** 문서를 청크 분할 후 벡터 저장소에 등록한다. */
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	IngestResponse ingest(@Valid @RequestBody IngestRequest request) {

@@ -11,6 +11,10 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * AI 관련 빈 설정.
+ * ChatClient, ChatMemory 등을 구성하고 시스템 프롬프트와 Advisor 체인을 정의한다.
+ */
 @Configuration
 public class AiConfig {
 
@@ -26,6 +30,10 @@ public class AiConfig {
 			5. 답변은 친절하고 간결하게 작성하세요.
 			""";
 
+	/**
+	 * 대화 이력 저장소.
+	 * 최근 20개 메시지를 슬라이딩 윈도우로 유지하며, 서버 재시작 시 초기화된다.
+	 */
 	@Bean
 	ChatMemory chatMemory() {
 		return MessageWindowChatMemory.builder()
@@ -34,6 +42,11 @@ public class AiConfig {
 				.build();
 	}
 
+	/**
+	 * ChatClient 구성.
+	 * 대화 이력({@link MessageChatMemoryAdvisor})과 RAG({@link QuestionAnswerAdvisor})를
+	 * defaultAdvisors로 등록하여 모든 요청에 자동 적용한다.
+	 */
 	@Bean
 	ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory, VectorStore vectorStore) {
 		return builder
