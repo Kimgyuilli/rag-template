@@ -31,6 +31,7 @@
         const chatArea = document.getElementById('chat-area');
         const input = document.getElementById('question');
         const sendBtn = document.getElementById('send-btn');
+        let conversationId = crypto.randomUUID();
 
         function addMsg(text, cls) {
             const div = document.createElement('div');
@@ -54,7 +55,7 @@
                 const res = await fetch('/api/chat/stream', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: q })
+                    body: JSON.stringify({ question: q, conversationId: conversationId })
                 });
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
@@ -66,10 +67,19 @@
                     const events = buffer.split('\n\n');
                     buffer = events.pop();
                     for (const event of events) {
-                        for (const line of event.replace(/\r/g, '').split('\n')) {
-                            if (line.startsWith('data:')) {
-                                botMsg.textContent += line.substring(5);
-                                chatArea.scrollTop = chatArea.scrollHeight;
+                        const lines = event.replace(/\r/g, '').split('\n');
+                        let eventType = '';
+                        for (const line of lines) {
+                            if (line.startsWith('event:')) {
+                                eventType = line.substring(6).trim();
+                            } else if (line.startsWith('data:')) {
+                                const data = line.substring(5);
+                                if (eventType === 'conversationId') {
+                                    conversationId = data;
+                                } else {
+                                    botMsg.textContent += data;
+                                    chatArea.scrollTop = chatArea.scrollHeight;
+                                }
                             }
                         }
                     }
