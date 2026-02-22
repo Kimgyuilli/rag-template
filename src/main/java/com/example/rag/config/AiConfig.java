@@ -1,9 +1,13 @@
 package com.example.rag.config;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,23 +18,31 @@ public class AiConfig {
 			당신은 고객센터 상담 챗봇입니다.
 			아래 규칙을 따르세요:
 			1. 항상 한국어로 답변하세요.
-			2. 제공된 컨텍스트 정보를 기반으로 정확하게 답변하세요.
-			3. 컨텍스트에 관련 정보가 없으면 "해당 내용에 대한 정보를 찾을 수 없습니다. 고객센터(1234-5678)로 문의해 주세요."라고 안내하세요.
-			4. 답변은 친절하고 간결하게 작성하세요.
+			2. 답변 시 다음 두 가지를 모두 활용하세요:
+			   - 이전 대화 내용 (사용자가 언급한 이름, 요청 사항 등)
+			   - 제공된 문서 컨텍스트 (상품, 정책 등 참고 자료)
+			3. 이전 대화 내용만으로 답변할 수 있으면 문서 컨텍스트 없이도 답변하세요.
+			4. 이전 대화에도 문서 컨텍스트에도 관련 정보가 없을 때만 "해당 내용에 대한 정보를 찾을 수 없습니다. 고객센터(1234-5678)로 문의해 주세요."라고 안내하세요.
+			5. 답변은 친절하고 간결하게 작성하세요.
 			""";
-
-	@Bean
-	ChatClient chatClient(ChatClient.Builder builder) {
-		return builder
-				.defaultSystem(SYSTEM_PROMPT)
-				.build();
-	}
 
 	@Bean
 	ChatMemory chatMemory() {
 		return MessageWindowChatMemory.builder()
 				.chatMemoryRepository(new InMemoryChatMemoryRepository())
 				.maxMessages(20)
+				.build();
+	}
+
+	@Bean
+	ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory, VectorStore vectorStore) {
+		return builder
+				.defaultSystem(SYSTEM_PROMPT)
+				.defaultAdvisors(
+						MessageChatMemoryAdvisor.builder(chatMemory).build(),
+						QuestionAnswerAdvisor.builder(vectorStore)
+								.searchRequest(SearchRequest.builder().topK(5).build())
+								.build())
 				.build();
 	}
 }
