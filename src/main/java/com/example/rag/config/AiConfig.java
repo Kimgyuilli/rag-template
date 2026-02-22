@@ -1,6 +1,9 @@
 package com.example.rag.config;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,6 +23,14 @@ public class AiConfig {
 	ChatClient chatClient(ChatClient.Builder builder) {
 		return builder
 				.defaultSystem(SYSTEM_PROMPT)
+				.build();
+	}
+
+	@Bean
+	ChatMemory chatMemory() {
+		return MessageWindowChatMemory.builder()
+				.chatMemoryRepository(new InMemoryChatMemoryRepository())
+				.maxMessages(20)
 				.build();
 	}
 }
