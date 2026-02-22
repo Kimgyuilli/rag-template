@@ -1,5 +1,7 @@
 package com.example.rag.chat;
 
+import java.util.UUID;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
@@ -22,20 +24,32 @@ public class ChatController {
 		this.chatService = chatService;
 	}
 
-	record ChatRequest(@NotBlank String question) {
+	record ChatRequest(@NotBlank String question, String conversationId) {
 	}
 
-	record ChatResponse(String answer) {
+	record ChatResponse(String answer, String conversationId) {
 	}
 
 	@PostMapping
 	ChatResponse chat(@Valid @RequestBody ChatRequest request) {
-		return new ChatResponse(chatService.ask(request.question()));
+		String conversationId = resolveConversationId(request.conversationId());
+		return new ChatResponse(chatService.ask(request.question(), conversationId), conversationId);
 	}
 
 	@PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	Flux<ServerSentEvent<String>> chatStream(@Valid @RequestBody ChatRequest request) {
-		return chatService.askStream(request.question())
-				.map(token -> ServerSentEvent.builder(token).build());
+		String conversationId = resolveConversationId(request.conversationId());
+		return chatService.askStream(request.question(), conversationId)
+				.map(token -> ServerSentEvent.builder(token).build())
+				.concatWith(Flux.just(ServerSentEvent.<String>builder()
+						.event("conversationId")
+						.data(conversationId)
+						.build()));
+	}
+
+	private String resolveConversationId(String conversationId) {
+		return (conversationId != null && !conversationId.isBlank())
+				? conversationId
+				: UUID.randomUUID().toString();
 	}
 }
