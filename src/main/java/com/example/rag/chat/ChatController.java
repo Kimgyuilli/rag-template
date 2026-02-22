@@ -14,6 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import reactor.core.publisher.Flux;
 
+/**
+ * 채팅 API 컨트롤러.
+ * 동기({@code POST /api/chat})와 스트리밍({@code POST /api/chat/stream}) 엔드포인트를 제공한다.
+ */
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {
@@ -24,18 +28,27 @@ public class ChatController {
 		this.chatService = chatService;
 	}
 
+	/**
+	 * @param question       사용자 질문 (필수)
+	 * @param conversationId 대화 세션 ID (선택 — 없으면 서버에서 UUID 생성)
+	 */
 	record ChatRequest(@NotBlank String question, String conversationId) {
 	}
 
 	record ChatResponse(String answer, String conversationId) {
 	}
 
+	/** 동기 방식 채팅 API. */
 	@PostMapping
 	ChatResponse chat(@Valid @RequestBody ChatRequest request) {
 		String conversationId = resolveConversationId(request.conversationId());
 		return new ChatResponse(chatService.ask(request.question(), conversationId), conversationId);
 	}
 
+	/**
+	 * 스트리밍 방식 채팅 API.
+	 * 응답 끝에 {@code conversationId} SSE 이벤트를 전송하여 클라이언트가 세션을 추적할 수 있게 한다.
+	 */
 	@PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	Flux<ServerSentEvent<String>> chatStream(@Valid @RequestBody ChatRequest request) {
 		String conversationId = resolveConversationId(request.conversationId());
