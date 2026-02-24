@@ -144,6 +144,16 @@
         let conversationId = sessionStorage.getItem('conversationId') || crypto.randomUUID();
         sessionStorage.setItem('conversationId', conversationId);
 
+        /* 페이지 로드 시 대화 이력 복원 */
+        (async () => {
+            try {
+                const res = await fetch(`/api/chat/history?conversationId=${conversationId}`);
+                if (!res.ok) return;
+                const messages = await res.json();
+                messages.forEach(m => addMsg(m.content, m.role === 'user' ? 'user' : 'bot'));
+            } catch (e) { /* 이력 없으면 무시 */ }
+        })();
+
         function addMsg(text, cls) {
             const div = document.createElement('div');
             div.className = 'msg ' + cls;
