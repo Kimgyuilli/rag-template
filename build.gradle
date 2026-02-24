@@ -40,6 +40,10 @@ dependencies {
 	// PostgreSQL
 	implementation 'org.postgresql:postgresql'
 
+	// Lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
 	// .env 파일 로딩
 	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
