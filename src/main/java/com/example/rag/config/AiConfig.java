@@ -54,7 +54,7 @@ public class AiConfig {
 				.defaultAdvisors(
 						MessageChatMemoryAdvisor.builder(chatMemory).build(),
 						QuestionAnswerAdvisor.builder(vectorStore)
-								.searchRequest(SearchRequest.builder().topK(5).build())
+								.searchRequest(SearchRequest.builder().topK(5).similarityThreshold(0.7).build())
 								.build())
 				.build();
 	}
