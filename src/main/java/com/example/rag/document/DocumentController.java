@@ -15,6 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.rag.document.dto.DocumentDetail;
+import com.example.rag.document.dto.DocumentSummary;
+import com.example.rag.document.dto.IngestRequest;
+import com.example.rag.document.dto.IngestResponse;
+
 import jakarta.validation.Valid;
 
 /**

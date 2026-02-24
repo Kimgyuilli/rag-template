@@ -10,6 +10,9 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import com.example.rag.document.dto.DocumentDetail;
+import com.example.rag.document.dto.DocumentSummary;
+
 /**
  * 문서 처리 서비스.
  * 원본 문서를 청크로 분할한 뒤 벡터 저장소에 임베딩하여 저장한다.
