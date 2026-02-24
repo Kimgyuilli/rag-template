@@ -26,19 +26,17 @@ public class DocumentRepository {
 				SELECT metadata->>'documentId' AS document_id,
 				       metadata->>'title' AS title,
 				       metadata->>'category' AS category,
-				       COUNT(*) AS chunk_count,
-				       MIN(created_at) AS created_at
+				       COUNT(*) AS chunk_count
 				FROM vector_store
 				WHERE metadata->>'documentId' IS NOT NULL
 				GROUP BY document_id, title, category
-				ORDER BY created_at DESC
+				ORDER BY title
 				""",
 				(rs, rowNum) -> new DocumentSummary(
 						UUID.fromString(rs.getString("document_id")),
 						rs.getString("title"),
 						rs.getString("category"),
-						rs.getInt("chunk_count"),
-						rs.getTimestamp("created_at").toLocalDateTime()));
+						rs.getInt("chunk_count")));
 	}
 
 	/** documentId에 해당하는 청크의 content, title, category 조회. */
@@ -47,7 +45,6 @@ public class DocumentRepository {
 				SELECT content, metadata->>'title' AS title, metadata->>'category' AS category
 				FROM vector_store
 				WHERE metadata->>'documentId' = ?
-				ORDER BY created_at
 				""",
 				(rs, rowNum) -> new ChunkRow(
 						rs.getString("content"),
