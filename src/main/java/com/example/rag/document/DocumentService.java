@@ -13,22 +13,20 @@ import org.springframework.stereotype.Service;
 import com.example.rag.document.dto.DocumentDetail;
 import com.example.rag.document.dto.DocumentSummary;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * 문서 처리 서비스.
  * 원본 문서를 청크로 분할한 뒤 벡터 저장소에 임베딩하여 저장한다.
  */
 @Service
+@RequiredArgsConstructor
 public class DocumentService {
 
 	private final VectorStore vectorStore;
 	private final JdbcTemplate jdbcTemplate;
 	/** 문서를 토큰 단위로 청크 분할 (최대 512토큰, 최소 50자, 겹침 5자). */
 	private final TokenTextSplitter splitter = new TokenTextSplitter(512, 50, 5, 1000, true);
-
-	public DocumentService(VectorStore vectorStore, JdbcTemplate jdbcTemplate) {
-		this.vectorStore = vectorStore;
-		this.jdbcTemplate = jdbcTemplate;
-	}
 
 	/**
 	 * 문서를 메타데이터와 함께 생성하고, 청크 분할 후 벡터 저장소에 저장한다.
