@@ -4,6 +4,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 
 /**
@@ -12,13 +13,10 @@ import reactor.core.publisher.Flux;
  * conversationId로 세션별 대화 이력을 구분한다.
  */
 @Service
+@RequiredArgsConstructor
 public class ChatService {
 
 	private final ChatClient chatClient;
-
-	public ChatService(ChatClient chatClient) {
-		this.chatClient = chatClient;
-	}
 
 	/**
 	 * 동기 방식으로 질문에 대한 답변을 반환한다.

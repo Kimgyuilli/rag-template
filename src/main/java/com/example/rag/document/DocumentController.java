@@ -21,19 +21,17 @@ import com.example.rag.document.dto.IngestRequest;
 import com.example.rag.document.dto.IngestResponse;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 문서 CRUD API 컨트롤러.
  */
 @RestController
 @RequestMapping("/api/documents")
+@RequiredArgsConstructor
 public class DocumentController {
 
 	private final DocumentService documentService;
-
-	public DocumentController(DocumentService documentService) {
-		this.documentService = documentService;
-	}
 
 	/** 문서를 청크 분할 후 벡터 저장소에 등록한다. */
 	@PostMapping

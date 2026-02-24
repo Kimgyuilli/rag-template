@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 
 /**
@@ -20,13 +21,10 @@ import reactor.core.publisher.Flux;
  */
 @RestController
 @RequestMapping("/api/chat")
+@RequiredArgsConstructor
 public class ChatController {
 
 	private final ChatService chatService;
-
-	public ChatController(ChatService chatService) {
-		this.chatService = chatService;
-	}
 
 	/**
 	 * @param question       사용자 질문 (필수)
