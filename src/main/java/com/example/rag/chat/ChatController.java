@@ -2,8 +2,10 @@ package com.example.rag.chat;
 
 import java.util.UUID;
 
+import com.example.rag.chat.dto.ChatRequest;
+import com.example.rag.chat.dto.ChatResponse;
+
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
@@ -25,16 +27,6 @@ import reactor.core.publisher.Flux;
 public class ChatController {
 
 	private final ChatService chatService;
-
-	/**
-	 * @param question       사용자 질문 (필수)
-	 * @param conversationId 대화 세션 ID (선택 — 없으면 서버에서 UUID 생성)
-	 */
-	record ChatRequest(@NotBlank String question, String conversationId) {
-	}
-
-	record ChatResponse(String answer, String conversationId) {
-	}
 
 	/** 동기 방식 채팅 API. */
 	@PostMapping
