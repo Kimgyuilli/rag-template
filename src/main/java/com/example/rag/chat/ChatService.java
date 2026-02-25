@@ -1,6 +1,7 @@
 package com.example.rag.chat;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.stereotype.Service;
 
@@ -25,12 +26,18 @@ public class ChatService {
 	 *
 	 * @param question       사용자 질문
 	 * @param conversationId 대화 세션 식별자
+	 * @param category       문서 카테고리 필터 (선택)
 	 * @return LLM 응답 텍스트
 	 */
-	public String ask(String question, String conversationId) {
+	public String ask(String question, String conversationId, String category) {
 		return chatClient.prompt()
 				.user(question)
-				.advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+				.advisors(a -> {
+					a.param(ChatMemory.CONVERSATION_ID, conversationId);
+					if (category != null && !category.isBlank()) {
+						a.param(QuestionAnswerAdvisor.FILTER_EXPRESSION, "category == '" + category + "'");
+					}
+				})
 				.call()
 				.content();
 	}
@@ -40,12 +47,18 @@ public class ChatService {
 	 *
 	 * @param question       사용자 질문
 	 * @param conversationId 대화 세션 식별자
+	 * @param category       문서 카테고리 필터 (선택)
 	 * @return 토큰 단위 응답 스트림
 	 */
-	public Flux<String> askStream(String question, String conversationId) {
+	public Flux<String> askStream(String question, String conversationId, String category) {
 		return chatClient.prompt()
 				.user(question)
-				.advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+				.advisors(a -> {
+					a.param(ChatMemory.CONVERSATION_ID, conversationId);
+					if (category != null && !category.isBlank()) {
+						a.param(QuestionAnswerAdvisor.FILTER_EXPRESSION, "category == '" + category + "'");
+					}
+				})
 				.stream()
 				.content();
 	}

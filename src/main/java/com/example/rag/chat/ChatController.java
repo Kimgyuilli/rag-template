@@ -32,7 +32,7 @@ public class ChatController {
 	 * @param question       사용자 질문 (필수)
 	 * @param conversationId 대화 세션 ID (선택 — 없으면 서버에서 UUID 생성)
 	 */
-	record ChatRequest(@NotBlank String question, String conversationId) {
+	record ChatRequest(@NotBlank String question, String conversationId, String category) {
 	}
 
 	record ChatResponse(String answer, String conversationId) {
@@ -42,7 +42,7 @@ public class ChatController {
 	@PostMapping
 	ChatResponse chat(@Valid @RequestBody ChatRequest request) {
 		String conversationId = resolveConversationId(request.conversationId());
-		return new ChatResponse(chatService.ask(request.question(), conversationId), conversationId);
+		return new ChatResponse(chatService.ask(request.question(), conversationId, request.category()), conversationId);
 	}
 
 	/**
@@ -52,7 +52,7 @@ public class ChatController {
 	@PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	Flux<ServerSentEvent<String>> chatStream(@Valid @RequestBody ChatRequest request) {
 		String conversationId = resolveConversationId(request.conversationId());
-		return chatService.askStream(request.question(), conversationId)
+		return chatService.askStream(request.question(), conversationId, request.category())
 				.map(token -> ServerSentEvent.builder(token).build())
 				.concatWith(Flux.just(ServerSentEvent.<String>builder()
 						.event("conversationId")
