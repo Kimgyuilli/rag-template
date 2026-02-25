@@ -53,6 +53,11 @@ public class ChatService {
 		return chatMemory.get(conversationId);
 	}
 
+	/** 대화 이력 초기화. */
+	public void clearHistory(String conversationId) {
+		chatMemory.clear(conversationId);
+	}
+
 	/** advisor 공통 파라미터 설정. */
 	private Consumer<AdvisorSpec> advisorParams(String conversationId, String category) {
 		return a -> {
