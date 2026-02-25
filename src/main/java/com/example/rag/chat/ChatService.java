@@ -1,10 +1,14 @@
 package com.example.rag.chat;
 
+import java.util.List;
+
 import org.springframework.ai.chat.client.ChatClient;
 import static com.example.rag.chat.RetrievalRerankAdvisor.FILTER_EXPRESSION;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 
 /**
@@ -13,13 +17,11 @@ import reactor.core.publisher.Flux;
  * conversationId로 세션별 대화 이력을 구분한다.
  */
 @Service
+@RequiredArgsConstructor
 public class ChatService {
 
 	private final ChatClient chatClient;
-
-	public ChatService(ChatClient chatClient) {
-		this.chatClient = chatClient;
-	}
+	private final ChatMemory chatMemory;
 
 	/**
 	 * 동기 방식으로 질문에 대한 답변을 반환한다.
@@ -61,5 +63,10 @@ public class ChatService {
 				})
 				.stream()
 				.content();
+	}
+
+	/** 대화 이력 조회. */
+	public List<Message> getHistory(String conversationId) {
+		return chatMemory.get(conversationId);
 	}
 }

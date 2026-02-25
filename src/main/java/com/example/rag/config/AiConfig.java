@@ -3,7 +3,7 @@ package com.example.rag.config;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
+import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -37,12 +37,12 @@ public class AiConfig {
 
 	/**
 	 * 대화 이력 저장소.
-	 * 최근 20개 메시지를 슬라이딩 윈도우로 유지하며, 서버 재시작 시 초기화된다.
+	 * 최근 20개 메시지를 슬라이딩 윈도우로 유지하며, JDBC를 통해 PostgreSQL에 영속화된다.
 	 */
 	@Bean
-	ChatMemory chatMemory() {
+	ChatMemory chatMemory(ChatMemoryRepository chatMemoryRepository) {
 		return MessageWindowChatMemory.builder()
-				.chatMemoryRepository(new InMemoryChatMemoryRepository())
+				.chatMemoryRepository(chatMemoryRepository)
 				.maxMessages(20)
 				.build();
 	}
