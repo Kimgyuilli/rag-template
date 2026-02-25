@@ -1,5 +1,6 @@
 package com.example.rag.chat;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,9 +21,7 @@ import org.springframework.ai.vectorstore.filter.FilterExpressionTextParser;
  * 벡터 검색 후 LLM 기반 재순위화를 수행하는 Advisor.
  * QuestionAnswerAdvisor를 대체하여 검색 품질을 향상시킨다.
  *
- * 동작 흐름:
- * 1. before(): 벡터 검색 topK=10 수행 → LLM으로 관련성 재순위화 → 상위 문서를 시스템 메시지에 추가
- * 2. after(): 검색된 문서를 context에 저장
+ * 검색 결과가 RERANK_TOP_N 이하이면 재순위화를 스킵하여 불필요한 LLM 호출을 방지한다.
  */
 public class RetrievalRerankAdvisor implements BaseAdvisor {
 
@@ -36,6 +35,8 @@ public class RetrievalRerankAdvisor implements BaseAdvisor {
 	private static final int SEARCH_TOP_K = 10;
 	private static final double SIMILARITY_THRESHOLD = 0.7;
 	private static final int RERANK_TOP_N = 5;
+
+	private static final FilterExpressionTextParser FILTER_PARSER = new FilterExpressionTextParser();
 
 	private static final String RERANK_PROMPT = """
 			당신은 문서 관련성 평가 전문가입니다.
@@ -79,8 +80,9 @@ public class RetrievalRerankAdvisor implements BaseAdvisor {
 
 	@Override
 	public ChatClientRequest before(ChatClientRequest request, AdvisorChain chain) {
-		// QueryRewriteAdvisor가 재작성한 쿼리가 있으면 사용, 없으면 원본 질문 사용
 		Map<String, Object> context = request.context();
+
+		// QueryRewriteAdvisor가 재작성한 쿼리가 있으면 사용, 없으면 원본 질문 사용
 		String query = context.containsKey(QueryRewriteAdvisor.REWRITTEN_QUERY_KEY)
 				? context.get(QueryRewriteAdvisor.REWRITTEN_QUERY_KEY).toString()
 				: request.prompt().getUserMessage().getText();
@@ -91,10 +93,8 @@ public class RetrievalRerankAdvisor implements BaseAdvisor {
 				.topK(SEARCH_TOP_K)
 				.similarityThreshold(SIMILARITY_THRESHOLD);
 
-		// FILTER_EXPRESSION 파라미터 지원 (Step 2 호환)
 		if (context.containsKey(FILTER_EXPRESSION)) {
-			String filterExpr = context.get(FILTER_EXPRESSION).toString();
-			searchBuilder.filterExpression(new FilterExpressionTextParser().parse(filterExpr));
+			searchBuilder.filterExpression(FILTER_PARSER.parse(context.get(FILTER_EXPRESSION).toString()));
 		}
 
 		List<Document> candidates = vectorStore.similaritySearch(searchBuilder.build());
@@ -104,18 +104,23 @@ public class RetrievalRerankAdvisor implements BaseAdvisor {
 			return request;
 		}
 
-		// LLM 기반 재순위화
-		List<Document> reranked = rerank(query, candidates);
-		log.info("재순위화 후: {}개 문서 선택", reranked.size());
+		// 검색 결과가 RERANK_TOP_N 이하이면 재순위화 스킵 (불필요한 LLM 호출 방지)
+		List<Document> selected;
+		if (candidates.size() <= RERANK_TOP_N) {
+			log.info("검색 결과 {}개 ≤ {} — 재순위화 스킵", candidates.size(), RERANK_TOP_N);
+			selected = candidates;
+		} else {
+			selected = rerank(query, candidates);
+			log.info("재순위화 후: {}개 문서 선택", selected.size());
+		}
 
-		// 검색 결과를 시스템 메시지에 추가
-		String documentContext = reranked.stream()
+		String documentContext = selected.stream()
 				.map(Document::getText)
 				.collect(Collectors.joining("\n\n"));
 
 		return request.mutate()
 				.prompt(request.prompt().augmentSystemMessage(String.format(CONTEXT_TEMPLATE, documentContext)))
-				.context(RETRIEVED_DOCUMENTS, reranked)
+				.context(RETRIEVED_DOCUMENTS, selected)
 				.build();
 	}
 
@@ -128,7 +133,6 @@ public class RetrievalRerankAdvisor implements BaseAdvisor {
 	 * LLM으로 문서 관련성을 재평가하여 상위 N개를 반환한다.
 	 */
 	private List<Document> rerank(String query, List<Document> candidates) {
-		// 문서 목록 포맷팅
 		StringBuilder docList = new StringBuilder();
 		for (int i = 0; i < candidates.size(); i++) {
 			docList.append(String.format("[%d] %s\n", i + 1,
@@ -141,9 +145,7 @@ public class RetrievalRerankAdvisor implements BaseAdvisor {
 			String response = chatModel.call(prompt).trim();
 			log.info("재순위화 LLM 응답: {}", response);
 
-			// "1,3,5" 형태의 응답 파싱
-			String[] indices = response.split("[,\\s]+");
-			return java.util.Arrays.stream(indices)
+			return Arrays.stream(response.split("[,\\s]+"))
 					.map(String::trim)
 					.filter(s -> s.matches("\\d+"))
 					.map(Integer::parseInt)
