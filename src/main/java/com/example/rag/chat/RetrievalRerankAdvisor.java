@@ -33,7 +33,7 @@ public class RetrievalRerankAdvisor implements BaseAdvisor {
 	public static final String FILTER_EXPRESSION = "qa_filter_expression";
 
 	private static final int SEARCH_TOP_K = 10;
-	private static final double SIMILARITY_THRESHOLD = 0.7;
+	private static final double SIMILARITY_THRESHOLD = 0.3;
 	private static final int RERANK_TOP_N = 5;
 
 	private static final FilterExpressionTextParser FILTER_PARSER = new FilterExpressionTextParser();
