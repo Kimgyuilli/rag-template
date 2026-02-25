@@ -76,6 +76,7 @@
         <div id="input-area">
             <textarea id="question" rows="1" placeholder="질문을 입력하세요..." autofocus></textarea>
             <button id="send-btn" class="btn btn-primary">전송</button>
+            <button id="new-chat-btn" class="btn btn-secondary" title="새 대화">새 대화</button>
         </div>
     </div>
 
@@ -213,6 +214,16 @@
                 input.focus();
             }
         }
+
+        document.getElementById('new-chat-btn').addEventListener('click', async () => {
+            try {
+                await fetch(`/api/chat/history?conversationId=${conversationId}`, { method: 'DELETE' });
+            } catch (e) { /* 서버 초기화 실패해도 클라이언트는 초기화 */ }
+            chatArea.innerHTML = '';
+            conversationId = crypto.randomUUID();
+            sessionStorage.setItem('conversationId', conversationId);
+            input.focus();
+        });
 
         sendBtn.addEventListener('click', send);
         input.addEventListener('keydown', (e) => {
