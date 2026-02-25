@@ -3,12 +3,6 @@ package com.example.rag.chat;
 import java.util.List;
 import java.util.UUID;
 
-import com.example.rag.chat.dto.ChatRequest;
-import com.example.rag.chat.dto.ChatResponse;
-import com.example.rag.chat.dto.MessageResponse;
-
-import jakarta.validation.Valid;
-
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
@@ -19,6 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.rag.chat.dto.ChatRequest;
+import com.example.rag.chat.dto.ChatResponse;
+import com.example.rag.chat.dto.MessageResponse;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 
@@ -32,20 +31,6 @@ import reactor.core.publisher.Flux;
 public class ChatController {
 
 	private final ChatService chatService;
-
-	public ChatController(ChatService chatService) {
-		this.chatService = chatService;
-	}
-
-	/**
-	 * @param question       사용자 질문 (필수)
-	 * @param conversationId 대화 세션 ID (선택 — 없으면 서버에서 UUID 생성)
-	 */
-	record ChatRequest(@NotBlank String question, String conversationId, String category) {
-	}
-
-	record ChatResponse(String answer, String conversationId) {
-	}
 
 	/** 동기 방식 채팅 API. */
 	@PostMapping
