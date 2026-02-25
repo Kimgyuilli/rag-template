@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RAG 챗봇</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -57,11 +60,11 @@
             </div>
             <div class="form-group" id="input-mode-group">
                 <label>입력 방식</label>
-                <div style="display:flex;gap:12px;margin-top:4px;">
-                    <label style="font-weight:normal;font-size:14px;cursor:pointer;">
+                <div class="radio-group">
+                    <label class="radio-label">
                         <input type="radio" name="inputMode" value="text" checked onchange="toggleInputMode()"> 텍스트 입력
                     </label>
-                    <label style="font-weight:normal;font-size:14px;cursor:pointer;">
+                    <label class="radio-label">
                         <input type="radio" name="inputMode" value="file" onchange="toggleInputMode()"> 파일 업로드
                     </label>
                 </div>
@@ -70,9 +73,9 @@
                 <label>내용</label>
                 <textarea id="doc-content" placeholder="문서 내용을 입력하세요..."></textarea>
             </div>
-            <div class="form-group" id="file-input-group" style="display:none;">
+            <div class="form-group file-input-group" id="file-input-group">
                 <label>파일 선택 (PDF, TXT, MD)</label>
-                <input type="file" id="doc-file" accept=".pdf,.txt,.md" style="margin-top:4px;">
+                <input type="file" id="doc-file" accept=".pdf,.txt,.md" class="file-input">
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModal()">취소</button>
@@ -85,8 +88,8 @@
     <div id="detail-modal" class="modal-overlay">
         <div class="modal">
             <h3 id="detail-title"></h3>
-            <p style="font-size:12px;color:#999;margin-bottom:12px;" id="detail-meta"></p>
-            <pre style="white-space:pre-wrap;font-size:14px;line-height:1.6;background:#fafafa;padding:16px;border-radius:6px;" id="detail-content"></pre>
+            <p class="detail-meta" id="detail-meta"></p>
+            <pre class="detail-content" id="detail-content"></pre>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeDetailModal()">닫기</button>
             </div>
