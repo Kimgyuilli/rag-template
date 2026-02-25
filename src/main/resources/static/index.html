@@ -126,9 +126,24 @@
                 <label>카테고리</label>
                 <input id="doc-category" placeholder="예: FAQ, 정책, 상품안내">
             </div>
-            <div class="form-group">
+            <div class="form-group" id="input-mode-group">
+                <label>입력 방식</label>
+                <div style="display:flex;gap:12px;margin-top:4px;">
+                    <label style="font-weight:normal;font-size:14px;cursor:pointer;">
+                        <input type="radio" name="inputMode" value="text" checked onchange="toggleInputMode()"> 텍스트 입력
+                    </label>
+                    <label style="font-weight:normal;font-size:14px;cursor:pointer;">
+                        <input type="radio" name="inputMode" value="file" onchange="toggleInputMode()"> 파일 업로드
+                    </label>
+                </div>
+            </div>
+            <div class="form-group" id="text-input-group">
                 <label>내용</label>
                 <textarea id="doc-content" placeholder="문서 내용을 입력하세요..."></textarea>
+            </div>
+            <div class="form-group" id="file-input-group" style="display:none;">
+                <label>파일 선택 (PDF, TXT, MD)</label>
+                <input type="file" id="doc-file" accept=".pdf,.txt,.md" style="margin-top:4px;">
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModal()">취소</button>
@@ -339,6 +354,13 @@
             return d.innerHTML;
         }
 
+        /* 입력 모드 전환 (텍스트/파일) */
+        function toggleInputMode() {
+            const mode = document.querySelector('input[name="inputMode"]:checked').value;
+            document.getElementById('text-input-group').style.display = mode === 'text' ? '' : 'none';
+            document.getElementById('file-input-group').style.display = mode === 'file' ? '' : 'none';
+        }
+
         /* 모달: 등록/수정 */
         function openModal(doc) {
             editingDocId = doc ? doc.documentId : null;
@@ -347,6 +369,18 @@
             document.getElementById('doc-title').value = doc ? doc.title : '';
             document.getElementById('doc-category').value = doc ? (doc.category || '') : '';
             document.getElementById('doc-content').value = doc ? doc.content : '';
+            document.getElementById('doc-file').value = '';
+            // 수정 모드에서는 파일 업로드 비활성화
+            const modeGroup = document.getElementById('input-mode-group');
+            if (doc) {
+                modeGroup.style.display = 'none';
+                document.getElementById('text-input-group').style.display = '';
+                document.getElementById('file-input-group').style.display = 'none';
+            } else {
+                modeGroup.style.display = '';
+                document.querySelector('input[name="inputMode"][value="text"]').checked = true;
+                toggleInputMode();
+            }
             document.getElementById('doc-modal').classList.add('active');
         }
 
@@ -357,24 +391,37 @@
 
         async function submitDoc() {
             const title = document.getElementById('doc-title').value.trim();
-            const content = document.getElementById('doc-content').value.trim();
             const category = document.getElementById('doc-category').value.trim();
+            const mode = document.querySelector('input[name="inputMode"]:checked').value;
 
-            if (!title || !content) { alert('제목과 내용을 입력해 주세요.'); return; }
-
-            const body = JSON.stringify({ title, content, category: category || null });
+            if (!title) { alert('제목을 입력해 주세요.'); return; }
 
             if (editingDocId) {
+                // 수정 모드: 기존 텍스트 방식
+                const content = document.getElementById('doc-content').value.trim();
+                if (!content) { alert('내용을 입력해 주세요.'); return; }
                 await fetch(`/api/documents/${editingDocId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body
+                    body: JSON.stringify({ title, content, category: category || null })
                 });
+            } else if (mode === 'file') {
+                // 파일 업로드 모드
+                const fileInput = document.getElementById('doc-file');
+                if (!fileInput.files.length) { alert('파일을 선택해 주세요.'); return; }
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('title', title);
+                if (category) formData.append('category', category);
+                await fetch('/api/documents/upload', { method: 'POST', body: formData });
             } else {
+                // 텍스트 입력 모드
+                const content = document.getElementById('doc-content').value.trim();
+                if (!content) { alert('내용을 입력해 주세요.'); return; }
                 await fetch('/api/documents', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body
+                    body: JSON.stringify({ title, content, category: category || null })
                 });
             }
 

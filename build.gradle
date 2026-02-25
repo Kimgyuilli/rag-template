@@ -44,6 +44,9 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
+	// PDF 파싱
+	implementation 'org.apache.pdfbox:pdfbox:3.0.4'
+
 	// .env 파일 로딩
 	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
