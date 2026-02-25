@@ -2,18 +2,23 @@ package com.example.rag.config;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
-import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.example.rag.chat.QueryRewriteAdvisor;
+import com.example.rag.chat.RetrievalRerankAdvisor;
+
 /**
  * AI 관련 빈 설정.
  * ChatClient, ChatMemory 등을 구성하고 시스템 프롬프트와 Advisor 체인을 정의한다.
+ *
+ * Advisor 실행 순서:
+ * MessageChatMemoryAdvisor(order=0) → QueryRewriteAdvisor(order=10) → RetrievalRerankAdvisor(order=20)
  */
 @Configuration
 public class AiConfig {
@@ -44,18 +49,17 @@ public class AiConfig {
 
 	/**
 	 * ChatClient 구성.
-	 * 대화 이력({@link MessageChatMemoryAdvisor})과 RAG({@link QuestionAnswerAdvisor})를
-	 * defaultAdvisors로 등록하여 모든 요청에 자동 적용한다.
+	 * Advisor 체인: 대화 이력 → 쿼리 리라이팅 → 벡터 검색 + 재순위화
 	 */
 	@Bean
-	ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory, VectorStore vectorStore) {
+	ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory,
+			ChatModel chatModel, VectorStore vectorStore) {
 		return builder
 				.defaultSystem(SYSTEM_PROMPT)
 				.defaultAdvisors(
 						MessageChatMemoryAdvisor.builder(chatMemory).build(),
-						QuestionAnswerAdvisor.builder(vectorStore)
-								.searchRequest(SearchRequest.builder().topK(5).build())
-								.build())
+						new QueryRewriteAdvisor(chatModel, 10),
+						new RetrievalRerankAdvisor(vectorStore, chatModel, 20))
 				.build();
 	}
 }

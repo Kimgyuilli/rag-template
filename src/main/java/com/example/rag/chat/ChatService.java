@@ -1,8 +1,12 @@
 package com.example.rag.chat;
 
 import java.util.List;
+import java.util.function.Consumer;
+
+import static com.example.rag.chat.RetrievalRerankAdvisor.FILTER_EXPRESSION;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.ChatClient.AdvisorSpec;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.stereotype.Service;
@@ -24,30 +28,22 @@ public class ChatService {
 
 	/**
 	 * 동기 방식으로 질문에 대한 답변을 반환한다.
-	 *
-	 * @param question       사용자 질문
-	 * @param conversationId 대화 세션 식별자
-	 * @return LLM 응답 텍스트
 	 */
-	public String ask(String question, String conversationId) {
+	public String ask(String question, String conversationId, String category) {
 		return chatClient.prompt()
 				.user(question)
-				.advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+				.advisors(advisorParams(conversationId, category))
 				.call()
 				.content();
 	}
 
 	/**
 	 * 스트리밍 방식으로 질문에 대한 답변을 토큰 단위로 반환한다.
-	 *
-	 * @param question       사용자 질문
-	 * @param conversationId 대화 세션 식별자
-	 * @return 토큰 단위 응답 스트림
 	 */
-	public Flux<String> askStream(String question, String conversationId) {
+	public Flux<String> askStream(String question, String conversationId, String category) {
 		return chatClient.prompt()
 				.user(question)
-				.advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+				.advisors(advisorParams(conversationId, category))
 				.stream()
 				.content();
 	}
@@ -55,5 +51,15 @@ public class ChatService {
 	/** 대화 이력 조회. */
 	public List<Message> getHistory(String conversationId) {
 		return chatMemory.get(conversationId);
+	}
+
+	/** advisor 공통 파라미터 설정. */
+	private Consumer<AdvisorSpec> advisorParams(String conversationId, String category) {
+		return a -> {
+			a.param(ChatMemory.CONVERSATION_ID, conversationId);
+			if (category != null && !category.isBlank()) {
+				a.param(FILTER_EXPRESSION, "category == '" + category + "'");
+			}
+		};
 	}
 }
