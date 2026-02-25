@@ -4,8 +4,9 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
-import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
+
+import com.example.rag.chat.memory.SummarizingChatMemory;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,13 +38,15 @@ public class AiConfig {
 
 	/**
 	 * 대화 이력 저장소.
-	 * 최근 20개 메시지를 슬라이딩 윈도우로 유지하며, JDBC를 통해 PostgreSQL에 영속화된다.
+	 * 메시지가 20개를 초과하면 오래된 메시지를 LLM으로 요약하여 맥락을 보존한다.
 	 */
 	@Bean
-	ChatMemory chatMemory(ChatMemoryRepository chatMemoryRepository) {
-		return MessageWindowChatMemory.builder()
+	ChatMemory chatMemory(ChatMemoryRepository chatMemoryRepository, ChatModel chatModel) {
+		return SummarizingChatMemory.builder()
 				.chatMemoryRepository(chatMemoryRepository)
+				.chatModel(chatModel)
 				.maxMessages(20)
+				.keepRecent(10)
 				.build();
 	}
 

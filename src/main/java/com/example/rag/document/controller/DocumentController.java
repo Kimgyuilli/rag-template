@@ -56,7 +56,7 @@ public class DocumentController {
 			@RequestParam("title") String title,
 			@RequestParam(value = "category", required = false) String category) throws IOException {
 		String content = fileParserService.extractText(file);
-		UUID documentId = documentService.ingest(title, content, category);
+		UUID documentId = documentService.ingest(title, content, category != null ? category : "");
 		return new IngestResponse("문서가 등록되었습니다.", documentId);
 	}
 
