@@ -40,6 +40,7 @@
         .msg { max-width: 70%; padding: 12px 16px; border-radius: 12px; line-height: 1.5; word-break: break-word; white-space: pre-wrap; }
         .user { align-self: flex-end; background: #1a1a2e; color: white; border-bottom-right-radius: 4px; }
         .bot { align-self: flex-start; background: white; border: 1px solid #e0e0e0; border-bottom-left-radius: 4px; }
+        .system { align-self: center; background: #f0f0f0; color: #666; font-size: 13px; border: 1px dashed #ccc; max-width: 90%; text-align: center; }
         #input-area { padding: 16px 24px; background: white; border-top: 1px solid #e0e0e0; display: flex; gap: 12px; }
         #question { flex: 1; padding: 12px 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; outline: none; resize: none; font-family: inherit; }
         #question:focus { border-color: #1a1a2e; }
@@ -213,7 +214,7 @@
                 const res = await fetch(`/api/chat/history?conversationId=${id}`);
                 if (!res.ok) return;
                 const messages = await res.json();
-                messages.forEach(m => addMsg(m.content, m.role === 'user' ? 'user' : 'bot'));
+                messages.forEach(m => addMsg(m.content, m.role === 'user' ? 'user' : m.role === 'system' ? 'system' : 'bot'));
             } catch (e) { /* 무시 */ }
             loadSessions();
             input.focus();
@@ -247,7 +248,7 @@
                 const res = await fetch(`/api/chat/history?conversationId=${conversationId}`);
                 if (!res.ok) return;
                 const messages = await res.json();
-                messages.forEach(m => addMsg(m.content, m.role === 'user' ? 'user' : 'bot'));
+                messages.forEach(m => addMsg(m.content, m.role === 'user' ? 'user' : m.role === 'system' ? 'system' : 'bot'));
             } catch (e) { /* 이력 없으면 무시 */ }
         })();
 

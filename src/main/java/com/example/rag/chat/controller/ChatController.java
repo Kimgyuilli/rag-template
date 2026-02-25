@@ -82,7 +82,9 @@ public class ChatController {
 	@GetMapping("/history")
 	List<MessageResponse> history(@RequestParam String conversationId) {
 		return chatService.getHistory(conversationId).stream()
-				.filter(m -> m.getMessageType() == MessageType.USER || m.getMessageType() == MessageType.ASSISTANT)
+				.filter(m -> m.getMessageType() == MessageType.USER
+						|| m.getMessageType() == MessageType.ASSISTANT
+						|| m.getMessageType() == MessageType.SYSTEM)
 				.map(m -> new MessageResponse(m.getMessageType().getValue(), m.getText()))
 				.toList();
 	}
