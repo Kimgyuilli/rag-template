@@ -1,29 +1,24 @@
 package com.example.rag.chat;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClientRequest;
 import org.springframework.ai.chat.client.ChatClientResponse;
 import org.springframework.ai.chat.client.advisor.api.AdvisorChain;
 import org.springframework.ai.chat.client.advisor.api.BaseAdvisor;
-import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.messages.MessageType;
-import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.prompt.Prompt;
 
 /**
  * 사용자 질문을 벡터 검색에 최적화된 쿼리로 재작성하는 Advisor.
- * QuestionAnswerAdvisor(또는 RetrievalRerankAdvisor)보다 먼저 실행되어야 한다.
+ * 재작성 쿼리는 context에만 저장하고, prompt의 메시지는 변경하지 않는다.
+ * RetrievalRerankAdvisor가 context에서 재작성 쿼리를 읽어 벡터 검색에 사용한다.
  */
 public class QueryRewriteAdvisor implements BaseAdvisor {
 
 	private static final Logger log = LoggerFactory.getLogger(QueryRewriteAdvisor.class);
 
-	private static final String ORIGINAL_QUERY_KEY = "originalQuery";
+	/** RetrievalRerankAdvisor가 읽을 context 키 */
+	static final String REWRITTEN_QUERY_KEY = "rewrittenQuery";
 
 	private static final String REWRITE_PROMPT = """
 			당신은 검색 쿼리 최적화 전문가입니다.
@@ -52,7 +47,8 @@ public class QueryRewriteAdvisor implements BaseAdvisor {
 	}
 
 	/**
-	 * before: 원본 질문을 보존하고, 재작성된 쿼리로 user message를 교체한다.
+	 * before: 사용자 질문을 검색용 쿼리로 재작성하여 context에 저장한다.
+	 * prompt 메시지는 변경하지 않아 대화 이력이 보존된다.
 	 */
 	@Override
 	public ChatClientRequest before(ChatClientRequest request, AdvisorChain chain) {
@@ -61,30 +57,11 @@ public class QueryRewriteAdvisor implements BaseAdvisor {
 		String rewrittenQuery = chatModel.call(String.format(REWRITE_PROMPT, originalQuery)).trim();
 		log.info("쿼리 리라이팅: '{}' → '{}'", originalQuery, rewrittenQuery);
 
-		// user message를 재작성 쿼리로 교체
-		List<Message> messages = new ArrayList<>();
-		for (Message msg : request.prompt().getInstructions()) {
-			if (msg.getMessageType() == MessageType.USER) {
-				messages.add(new UserMessage(rewrittenQuery));
-			} else {
-				messages.add(msg);
-			}
-		}
-
-		Prompt newPrompt = Prompt.builder()
-				.messages(messages)
-				.chatOptions(request.prompt().getOptions())
-				.build();
-
 		return request.mutate()
-				.prompt(newPrompt)
-				.context(ORIGINAL_QUERY_KEY, originalQuery)
+				.context(REWRITTEN_QUERY_KEY, rewrittenQuery)
 				.build();
 	}
 
-	/**
-	 * after: 원본 질문을 복원하여 최종 LLM이 원래 질문에 대해 응답하도록 한다.
-	 */
 	@Override
 	public ChatClientResponse after(ChatClientResponse response, AdvisorChain chain) {
 		return response;

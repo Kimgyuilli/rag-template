@@ -79,7 +79,11 @@ public class RetrievalRerankAdvisor implements BaseAdvisor {
 
 	@Override
 	public ChatClientRequest before(ChatClientRequest request, AdvisorChain chain) {
-		String query = request.prompt().getUserMessage().getText();
+		// QueryRewriteAdvisor가 재작성한 쿼리가 있으면 사용, 없으면 원본 질문 사용
+		Map<String, Object> context = request.context();
+		String query = context.containsKey(QueryRewriteAdvisor.REWRITTEN_QUERY_KEY)
+				? context.get(QueryRewriteAdvisor.REWRITTEN_QUERY_KEY).toString()
+				: request.prompt().getUserMessage().getText();
 
 		// 벡터 검색 수행
 		SearchRequest.Builder searchBuilder = SearchRequest.builder()
@@ -88,7 +92,6 @@ public class RetrievalRerankAdvisor implements BaseAdvisor {
 				.similarityThreshold(SIMILARITY_THRESHOLD);
 
 		// FILTER_EXPRESSION 파라미터 지원 (Step 2 호환)
-		Map<String, Object> context = request.context();
 		if (context.containsKey(FILTER_EXPRESSION)) {
 			String filterExpr = context.get(FILTER_EXPRESSION).toString();
 			searchBuilder.filterExpression(new FilterExpressionTextParser().parse(filterExpr));
