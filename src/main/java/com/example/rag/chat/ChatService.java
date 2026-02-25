@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 import static com.example.rag.chat.RetrievalRerankAdvisor.FILTER_EXPRESSION;
 
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.AdvisorSpec;
+import org.springframework.ai.chat.client.ChatClient.AdvisorSpec;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.stereotype.Service;
