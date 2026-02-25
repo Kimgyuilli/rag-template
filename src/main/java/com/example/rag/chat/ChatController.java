@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -52,6 +53,12 @@ public class ChatController {
 						.event("conversationId")
 						.data(conversationId)
 						.build()));
+	}
+
+	/** 대화 이력 초기화 API. */
+	@DeleteMapping("/history")
+	void clearHistory(@RequestParam String conversationId) {
+		chatService.clearHistory(conversationId);
 	}
 
 	/** 대화 이력 조회 API. */
