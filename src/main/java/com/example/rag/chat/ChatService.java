@@ -1,7 +1,7 @@
 package com.example.rag.chat;
 
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import static com.example.rag.chat.RetrievalRerankAdvisor.FILTER_EXPRESSION;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +35,7 @@ public class ChatService {
 				.advisors(a -> {
 					a.param(ChatMemory.CONVERSATION_ID, conversationId);
 					if (category != null && !category.isBlank()) {
-						a.param(QuestionAnswerAdvisor.FILTER_EXPRESSION, "category == '" + category + "'");
+						a.param(FILTER_EXPRESSION, "category == '" + category + "'");
 					}
 				})
 				.call()
@@ -56,7 +56,7 @@ public class ChatService {
 				.advisors(a -> {
 					a.param(ChatMemory.CONVERSATION_ID, conversationId);
 					if (category != null && !category.isBlank()) {
-						a.param(QuestionAnswerAdvisor.FILTER_EXPRESSION, "category == '" + category + "'");
+						a.param(FILTER_EXPRESSION, "category == '" + category + "'");
 					}
 				})
 				.stream()
