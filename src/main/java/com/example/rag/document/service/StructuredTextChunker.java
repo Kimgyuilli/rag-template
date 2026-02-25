@@ -111,8 +111,8 @@ public class StructuredTextChunker {
 		IntArrayList tokens = encoding.encode(text);
 		List<String> chunks = new ArrayList<>();
 
-		for (int start = 0; start < tokens.length(); start += MAX_TOKENS) {
-			int end = Math.min(start + MAX_TOKENS, tokens.length());
+		for (int start = 0; start < tokens.size(); start += MAX_TOKENS) {
+			int end = Math.min(start + MAX_TOKENS, tokens.size());
 			IntArrayList slice = new IntArrayList();
 			for (int i = start; i < end; i++) {
 				slice.add(tokens.get(i));
@@ -139,9 +139,9 @@ public class StructuredTextChunker {
 			IntArrayList prevTokens = encoding.encode(prev);
 
 			String overlap = "";
-			if (prevTokens.length() > OVERLAP_TOKENS) {
+			if (prevTokens.size() > OVERLAP_TOKENS) {
 				IntArrayList overlapTokens = new IntArrayList();
-				for (int j = prevTokens.length() - OVERLAP_TOKENS; j < prevTokens.length(); j++) {
+				for (int j = prevTokens.size() - OVERLAP_TOKENS; j < prevTokens.size(); j++) {
 					overlapTokens.add(prevTokens.get(j));
 				}
 				overlap = encoding.decode(overlapTokens).strip();
@@ -158,6 +158,6 @@ public class StructuredTextChunker {
 	}
 
 	private int countTokens(String text) {
-		return encoding.encode(text).length();
+		return encoding.encode(text).size();
 	}
 }

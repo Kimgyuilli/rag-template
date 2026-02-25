@@ -1,6 +1,9 @@
 package com.example.rag.chat.advisor;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -17,11 +20,14 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionTextParser;
 
+import com.example.rag.chat.repository.KeywordSearchRepository;
+
 /**
- * 벡터 검색 후 LLM 기반 재순위화를 수행하는 Advisor.
- * QuestionAnswerAdvisor를 대체하여 검색 품질을 향상시킨다.
+ * 하이브리드 검색(벡터 + 키워드) 후 RRF 병합 및 LLM 재순위화를 수행하는 Advisor.
  *
- * 검색 결과가 RERANK_TOP_N 이하이면 재순위화를 스킵하여 불필요한 LLM 호출을 방지한다.
+ * 1. 벡터 검색(top-10) + 키워드 검색(top-10) 병렬 실행
+ * 2. RRF(Reciprocal Rank Fusion)로 결과 병합
+ * 3. 상위 10개를 LLM 재순위화하여 최종 5개 선택
  */
 public class RetrievalRerankAdvisor implements BaseAdvisor {
 
@@ -35,6 +41,7 @@ public class RetrievalRerankAdvisor implements BaseAdvisor {
 	private static final int SEARCH_TOP_K = 10;
 	private static final double SIMILARITY_THRESHOLD = 0.3;
 	private static final int RERANK_TOP_N = 5;
+	private static final int RRF_K = 60;
 
 	private static final FilterExpressionTextParser FILTER_PARSER = new FilterExpressionTextParser();
 
@@ -65,11 +72,14 @@ public class RetrievalRerankAdvisor implements BaseAdvisor {
 
 	private final VectorStore vectorStore;
 	private final ChatModel chatModel;
+	private final KeywordSearchRepository keywordSearchRepository;
 	private final int order;
 
-	public RetrievalRerankAdvisor(VectorStore vectorStore, ChatModel chatModel, int order) {
+	public RetrievalRerankAdvisor(VectorStore vectorStore, ChatModel chatModel,
+			KeywordSearchRepository keywordSearchRepository, int order) {
 		this.vectorStore = vectorStore;
 		this.chatModel = chatModel;
+		this.keywordSearchRepository = keywordSearchRepository;
 		this.order = order;
 	}
 
@@ -87,18 +97,31 @@ public class RetrievalRerankAdvisor implements BaseAdvisor {
 				? context.get(QueryRewriteAdvisor.REWRITTEN_QUERY_KEY).toString()
 				: request.prompt().getUserMessage().getText();
 
+		// 카테고리 필터 추출
+		String category = context.containsKey(FILTER_EXPRESSION)
+				? context.get(FILTER_EXPRESSION).toString()
+				: null;
+
 		// 벡터 검색 수행
 		SearchRequest.Builder searchBuilder = SearchRequest.builder()
 				.query(query)
 				.topK(SEARCH_TOP_K)
 				.similarityThreshold(SIMILARITY_THRESHOLD);
 
-		if (context.containsKey(FILTER_EXPRESSION)) {
-			searchBuilder.filterExpression(FILTER_PARSER.parse(context.get(FILTER_EXPRESSION).toString()));
+		if (category != null) {
+			searchBuilder.filterExpression(FILTER_PARSER.parse(category));
 		}
 
-		List<Document> candidates = vectorStore.similaritySearch(searchBuilder.build());
-		log.info("벡터 검색 결과: {}개 문서", candidates.size());
+		List<Document> vectorResults = vectorStore.similaritySearch(searchBuilder.build());
+		log.info("벡터 검색 결과: {}개 문서", vectorResults.size());
+
+		// 키워드 검색 수행
+		List<Document> keywordResults = keywordSearchRepository.search(query, SEARCH_TOP_K, null);
+		log.info("키워드 검색 결과: {}개 문서", keywordResults.size());
+
+		// RRF 병합
+		List<Document> candidates = mergeByRRF(vectorResults, keywordResults);
+		log.info("RRF 병합 결과: {}개 문서", candidates.size());
 
 		if (candidates.isEmpty()) {
 			return request;
@@ -127,6 +150,38 @@ public class RetrievalRerankAdvisor implements BaseAdvisor {
 	@Override
 	public ChatClientResponse after(ChatClientResponse response, AdvisorChain chain) {
 		return response;
+	}
+
+	/**
+	 * RRF(Reciprocal Rank Fusion)로 벡터 검색과 키워드 검색 결과를 병합한다.
+	 * score = Σ 1/(RRF_K + rank)
+	 *
+	 * @return RRF 점수 순으로 정렬된 상위 SEARCH_TOP_K개 문서
+	 */
+	private List<Document> mergeByRRF(List<Document> vectorResults, List<Document> keywordResults) {
+		// Document ID → (RRF 점수, Document) 매핑
+		Map<String, Double> scores = new HashMap<>();
+		Map<String, Document> docMap = new LinkedHashMap<>();
+
+		for (int i = 0; i < vectorResults.size(); i++) {
+			Document doc = vectorResults.get(i);
+			String id = doc.getId();
+			scores.merge(id, 1.0 / (RRF_K + i + 1), Double::sum);
+			docMap.putIfAbsent(id, doc);
+		}
+
+		for (int i = 0; i < keywordResults.size(); i++) {
+			Document doc = keywordResults.get(i);
+			String id = doc.getId();
+			scores.merge(id, 1.0 / (RRF_K + i + 1), Double::sum);
+			docMap.putIfAbsent(id, doc);
+		}
+
+		return scores.entrySet().stream()
+				.sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+				.limit(SEARCH_TOP_K)
+				.map(e -> docMap.get(e.getKey()))
+				.toList();
 	}
 
 	/**

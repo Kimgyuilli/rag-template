@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.example.rag.chat.advisor.QueryRewriteAdvisor;
 import com.example.rag.chat.advisor.RetrievalRerankAdvisor;
+import com.example.rag.chat.repository.KeywordSearchRepository;
 
 /**
  * AI 관련 빈 설정.
@@ -52,17 +53,18 @@ public class AiConfig {
 
 	/**
 	 * ChatClient 구성.
-	 * Advisor 체인: 대화 이력 → 쿼리 리라이팅 → 벡터 검색 + 재순위화
+	 * Advisor 체인: 대화 이력 → 쿼리 리라이팅 → 하이브리드 검색(벡터+키워드) + 재순위화
 	 */
 	@Bean
 	ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory,
-			ChatModel chatModel, VectorStore vectorStore) {
+			ChatModel chatModel, VectorStore vectorStore,
+			KeywordSearchRepository keywordSearchRepository) {
 		return builder
 				.defaultSystem(SYSTEM_PROMPT)
 				.defaultAdvisors(
 						MessageChatMemoryAdvisor.builder(chatMemory).build(),
 						new QueryRewriteAdvisor(chatModel, 10),
-						new RetrievalRerankAdvisor(vectorStore, chatModel, 20))
+						new RetrievalRerankAdvisor(vectorStore, chatModel, keywordSearchRepository, 20))
 				.build();
 	}
 }
