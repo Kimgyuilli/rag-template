@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.ai.document.Document;
-import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 
@@ -26,8 +25,7 @@ public class DocumentService {
 
 	private final VectorStore vectorStore;
 	private final DocumentRepository documentRepository;
-	/** 문서를 토큰 단위로 청크 분할 (최대 512토큰, 최소 50자, 겹침 5자). */
-	private final TokenTextSplitter splitter = new TokenTextSplitter(512, 50, 5, 1000, true);
+	private final StructuredTextChunker chunker = new StructuredTextChunker();
 
 	/**
 	 * 문서를 메타데이터와 함께 생성하고, 청크 분할 후 벡터 저장소에 저장한다.
@@ -40,12 +38,14 @@ public class DocumentService {
 	}
 
 	private UUID ingest(UUID documentId, String title, String content, String category) {
-		Document document = new Document(content, Map.of(
+		Map<String, Object> metadata = Map.of(
 				"title", title,
 				"category", category,
-				"documentId", documentId.toString()));
+				"documentId", documentId.toString());
 
-		List<Document> chunks = splitter.apply(List.of(document));
+		List<Document> chunks = chunker.chunk(content).stream()
+				.map(text -> new Document(text, metadata))
+				.toList();
 		vectorStore.add(chunks);
 		return documentId;
 	}
