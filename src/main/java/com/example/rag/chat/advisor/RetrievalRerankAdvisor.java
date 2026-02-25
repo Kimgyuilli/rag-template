@@ -1,4 +1,4 @@
-package com.example.rag.chat;
+package com.example.rag.chat.advisor;
 
 import java.util.Arrays;
 import java.util.List;

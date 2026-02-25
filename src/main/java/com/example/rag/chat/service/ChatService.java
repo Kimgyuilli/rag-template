@@ -1,9 +1,9 @@
-package com.example.rag.chat;
+package com.example.rag.chat.service;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-import static com.example.rag.chat.RetrievalRerankAdvisor.FILTER_EXPRESSION;
+import static com.example.rag.chat.advisor.RetrievalRerankAdvisor.FILTER_EXPRESSION;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.ChatClient.AdvisorSpec;

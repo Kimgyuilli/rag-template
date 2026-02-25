@@ -1,4 +1,4 @@
-package com.example.rag.chat.dto;
+package com.example.rag.chat.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 

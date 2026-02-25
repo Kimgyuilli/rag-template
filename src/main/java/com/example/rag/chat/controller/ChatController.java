@@ -1,4 +1,4 @@
-package com.example.rag.chat;
+package com.example.rag.chat.controller;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,10 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.rag.chat.dto.ChatRequest;
-import com.example.rag.chat.dto.ChatResponse;
-import com.example.rag.chat.dto.MessageResponse;
-import com.example.rag.chat.dto.SessionSummary;
+import com.example.rag.chat.dto.request.ChatRequest;
+import com.example.rag.chat.dto.response.ChatResponse;
+import com.example.rag.chat.dto.response.MessageResponse;
+import com.example.rag.chat.dto.vo.SessionSummary;
+import com.example.rag.chat.repository.SessionRepository;
+import com.example.rag.chat.service.ChatService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

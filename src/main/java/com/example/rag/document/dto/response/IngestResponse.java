@@ -1,4 +1,4 @@
-package com.example.rag.document.dto;
+package com.example.rag.document.dto.response;
 
 import java.util.UUID;
 

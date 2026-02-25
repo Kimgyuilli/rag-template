@@ -1,4 +1,4 @@
-package com.example.rag.document;
+package com.example.rag.document.service;
 
 import java.util.List;
 import java.util.Map;
@@ -9,9 +9,10 @@ import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 
-import com.example.rag.document.DocumentRepository.ChunkRow;
-import com.example.rag.document.dto.DocumentDetail;
-import com.example.rag.document.dto.DocumentSummary;
+import com.example.rag.document.repository.DocumentRepository;
+import com.example.rag.document.repository.DocumentRepository.ChunkRow;
+import com.example.rag.document.dto.vo.DocumentDetail;
+import com.example.rag.document.dto.vo.DocumentSummary;
 
 import lombok.RequiredArgsConstructor;
 

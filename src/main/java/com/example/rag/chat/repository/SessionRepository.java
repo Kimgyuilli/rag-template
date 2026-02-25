@@ -1,11 +1,11 @@
-package com.example.rag.chat;
+package com.example.rag.chat.repository;
 
 import java.util.List;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import com.example.rag.chat.dto.SessionSummary;
+import com.example.rag.chat.dto.vo.SessionSummary;
 
 import lombok.RequiredArgsConstructor;
 

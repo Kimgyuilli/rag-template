@@ -10,8 +10,8 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.example.rag.chat.QueryRewriteAdvisor;
-import com.example.rag.chat.RetrievalRerankAdvisor;
+import com.example.rag.chat.advisor.QueryRewriteAdvisor;
+import com.example.rag.chat.advisor.RetrievalRerankAdvisor;
 
 /**
  * AI 관련 빈 설정.

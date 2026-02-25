@@ -1,4 +1,4 @@
-package com.example.rag.chat;
+package com.example.rag.chat.advisor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

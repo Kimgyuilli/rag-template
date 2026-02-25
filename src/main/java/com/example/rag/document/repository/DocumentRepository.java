@@ -1,4 +1,4 @@
-package com.example.rag.document;
+package com.example.rag.document.repository;
 
 import java.util.List;
 import java.util.UUID;
@@ -6,7 +6,7 @@ import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import com.example.rag.document.dto.DocumentSummary;
+import com.example.rag.document.dto.vo.DocumentSummary;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,7 +21,7 @@ public class DocumentRepository {
 	private final JdbcTemplate jdbcTemplate;
 
 	/** documentId별 문서 목록 조회. */
-	List<DocumentSummary> findAllGroupedByDocumentId() {
+	public List<DocumentSummary> findAllGroupedByDocumentId() {
 		return jdbcTemplate.query("""
 				SELECT metadata->>'documentId' AS document_id,
 				       metadata->>'title' AS title,
@@ -40,7 +40,7 @@ public class DocumentRepository {
 	}
 
 	/** documentId에 해당하는 청크의 content, title, category 조회. */
-	List<ChunkRow> findChunksByDocumentId(UUID documentId) {
+	public List<ChunkRow> findChunksByDocumentId(UUID documentId) {
 		return jdbcTemplate.query("""
 				SELECT content, metadata->>'title' AS title, metadata->>'category' AS category
 				FROM vector_store
@@ -54,12 +54,12 @@ public class DocumentRepository {
 	}
 
 	/** documentId에 해당하는 청크 ID 목록 조회. */
-	List<String> findChunkIdsByDocumentId(UUID documentId) {
+	public List<String> findChunkIdsByDocumentId(UUID documentId) {
 		return jdbcTemplate.queryForList("""
 				SELECT id FROM vector_store WHERE metadata->>'documentId' = ?
 				""",
 				String.class, documentId.toString());
 	}
 
-	record ChunkRow(String content, String title, String category) {}
+	public record ChunkRow(String content, String title, String category) {}
 }

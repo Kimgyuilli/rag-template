@@ -1,4 +1,4 @@
-package com.example.rag.document;
+package com.example.rag.document.controller;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,10 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.rag.document.dto.DocumentDetail;
-import com.example.rag.document.dto.DocumentSummary;
-import com.example.rag.document.dto.IngestRequest;
-import com.example.rag.document.dto.IngestResponse;
+import com.example.rag.document.dto.request.IngestRequest;
+import com.example.rag.document.dto.response.IngestResponse;
+import com.example.rag.document.dto.vo.DocumentDetail;
+import com.example.rag.document.dto.vo.DocumentSummary;
+import com.example.rag.document.service.DocumentService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
