@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.rag.chat.dto.ChatRequest;
 import com.example.rag.chat.dto.ChatResponse;
 import com.example.rag.chat.dto.MessageResponse;
+import com.example.rag.chat.dto.SessionSummary;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ import reactor.core.publisher.Flux;
 public class ChatController {
 
 	private final ChatService chatService;
+	private final SessionRepository sessionRepository;
 
 	/** 동기 방식 채팅 API. */
 	@PostMapping
@@ -53,6 +56,18 @@ public class ChatController {
 						.event("conversationId")
 						.data(conversationId)
 						.build()));
+	}
+
+	/** 세션 목록 조회 API. */
+	@GetMapping("/sessions")
+	List<SessionSummary> sessions() {
+		return sessionRepository.findAllSessions();
+	}
+
+	/** 세션 삭제 API. */
+	@DeleteMapping("/sessions/{conversationId}")
+	void deleteSession(@PathVariable String conversationId) {
+		chatService.clearHistory(conversationId);
 	}
 
 	/** 대화 이력 초기화 API. */
