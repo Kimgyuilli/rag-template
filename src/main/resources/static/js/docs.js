@@ -29,7 +29,7 @@ async function loadDocs() {
 function toggleInputMode() {
     const mode = document.querySelector('input[name="inputMode"]:checked').value;
     document.getElementById('text-input-group').style.display = mode === 'text' ? '' : 'none';
-    document.getElementById('file-input-group').style.display = mode === 'file' ? '' : 'none';
+    document.getElementById('file-input-group').style.display = mode === 'file' ? 'block' : 'none';
 }
 
 /* 모달: 등록/수정 */
